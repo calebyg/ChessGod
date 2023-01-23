@@ -25,7 +25,7 @@ async def on_message(message):
 # Commands
 
 # Returns the full name of the chess username argument
-# ex: $test fabianocaruana - Fabiano Caruana
+# ex: $name fabianocaruana - Fabiano Caruana
 @bot.command(aliases=['username'])
 async def name(ctx, arg):
     response = get_player_profile(arg)
