@@ -25,7 +25,11 @@ async def on_message(message):
 
 # Commands
 
+<<<<<<< HEAD
 # Returns the full name of a chess.com account
+=======
+# Returns the full name of the chess username argument
+>>>>>>> 0c55bd7bcd869dc08b3ff06e351682377bb28734
 # ex: $name fabianocaruana - Fabiano Caruana
 @bot.command(aliases=['username'])
 async def name(ctx, name_input):
