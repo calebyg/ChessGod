@@ -1,8 +1,9 @@
 import os
+import json
 
 from discord.ext import commands
 from dotenv import load_dotenv
-from chessdotcom import get_player_profile
+from chessdotcom import get_player_profile, get_player_stats
 
 load_dotenv() # import variables from .env
 token = os.environ.get("api-token")
@@ -24,11 +25,42 @@ async def on_message(message):
 
 # Commands
 
-# Returns the full name of the chess username argument
-# ex: $test fabianocaruana - Fabiano Caruana
+# Returns the full name of a chess.com account
+# ex: $name fabianocaruana - Fabiano Caruana
 @bot.command(aliases=['username'])
-async def name(ctx, arg):
-    response = get_player_profile(arg)
-    await ctx.send(f'Name: {response.player.name}')
+async def name(ctx, name_input):
+    try:
+        response = get_player_profile(name_input)
+        player_name = response.player.name
+    except:
+        await ctx.send(f'Error! Name for {name_input} not found in chess.com database.')
+    else:
+        await ctx.send(f'Full name: {player_name}')
+
+# Returns the stats of any chess.com user
+# ex: $stats magnuscarlsen
+@bot.command()
+async def stats(ctx, name_input):
+    try:
+        get_player_profile(name_input) # determine if account exists
+    except:
+        await ctx.send(f'Error! No information for {name_input} found!')
+    else:
+        await chess_response_ratings(name_input)
+        await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
+
+# Converts ChessDotComResponse to Python dict
+# Then displays chess mode and rating pairs as a single string
+async def chess_response_ratings(name):
+    str = ""
+    # JSON object as dict
+    response = get_player_stats(name).json
+
+    # for printing the key-value pair of
+    # nested "stats" dictionary
+    for mode in response["stats"]:
+        str += mode + " rating: " + mode[0]['rating'] + "\n"
+
+    return str
 
 bot.run(token)
