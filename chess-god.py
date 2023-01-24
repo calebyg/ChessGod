@@ -46,7 +46,6 @@ async def stats(ctx, name_input):
     except:
         await ctx.send(f'Error! No information for {name_input} found!')
     else:
-        await chess_response_ratings(name_input)
         await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
 
 # Converts ChessDotComResponse to Python dict
