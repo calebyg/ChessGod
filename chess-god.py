@@ -46,20 +46,40 @@ async def stats(ctx, name_input):
     except:
         await ctx.send(f'Error! No information for {name_input} found!')
     else:
-        await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
+       await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
 
 # Converts ChessDotComResponse to Python dict
 # Then displays chess mode and rating pairs as a single string
-async def chess_response_ratings(name):
-    str = ""
+# 'chess_rapid' -> 'last' -> 'rating'
+# 'chess_bullet' -> 'last' -> 'rating'
+# 'chess_blitz' -> 'last' -> 'rating'
+# 'tactics' -> 'highest' -> 'rating'
+# 'fide' -> rating
+# 'puzzle_rush' -> 'best' -> 'score'
+def chess_response_ratings(name):
+    chess_play_modes = ["chess_rapid", "chess_bullet", "chess_blitz"]
+
+    result = "Ratings for player " + name + ":\n"
+
     # JSON object as dict
     response = get_player_stats(name).json
 
-    # for printing the key-value pair of
-    # nested "stats" dictionary
     for mode in response["stats"]:
-        str += mode + " rating: " + mode[0]['rating'] + "\n"
+        result = ""
+        # mode_len = len()
 
-    return str
+        # if mode_len < 1: # to avoid accessing null properties of a chess mode
+        #     result += mode + ": No data to display.\n"
+        if mode in chess_play_modes:
+            result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
+        elif mode == 'tactics':
+            result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
+        elif mode == 'fide':
+            result += mode + ": " + str(response[mode]) + "\n"
+        elif mode == 'puzzle_rush':
+            result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
+        else:
+            result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
+    return result
 
 bot.run(token)
