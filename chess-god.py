@@ -65,9 +65,7 @@ def chess_response_ratings(name):
     response = get_player_stats(name).json
 
     for mode in response["stats"]:
-        result = ""
         # mode_len = len()
-
         # if mode_len < 1: # to avoid accessing null properties of a chess mode
         #     result += mode + ": No data to display.\n"
         if mode in chess_play_modes:
@@ -75,7 +73,7 @@ def chess_response_ratings(name):
         elif mode == 'tactics':
             result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
         elif mode == 'fide':
-            result += mode + ": " + str(response[mode]) + "\n"
+            result += mode + ": " + str(response["stats"][mode]) + "\n"
         elif mode == 'puzzle_rush':
             result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
         else:
