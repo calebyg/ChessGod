@@ -37,6 +37,40 @@ async def name(ctx, name_input):
     else:
         await ctx.send(f'Full name: {player_name}')
 
+# Returns user's stats for a given mode
+# ex: $mode_rating magnuscarlsen puzzle_rush
+@bot.command()
+async def mode_rating(ctx, name_input: str, mode: str):
+    try:
+        get_player_profile(name_input) # determine if account exists
+    except:
+        await ctx.send(f':bangbang: Error! No information for {name_input} found!')
+
+    player_stats = get_player_stats(name).json["stats"]
+    print(player_stats)
+
+    if mode not in player_stats:
+        await ctx.send(f':bangbang: Error! Mode **{mode}** does not exist')    
+
+    mode_stats = player_stats[mode]
+    print(mode_stats)
+
+    # Empty stats
+    if not mode_stats or len(mode_stats) == 0:
+        await ctx.send(f':bangbang: Error! User **{name_input}** does not have a rating for mode **{mode}**')
+    else:
+        rating = 'N/A'
+        if 'rating' in mode_stats:
+            rating = mode_stats['rating']
+        elif 'last' in mode_stats:
+            rating = mode_stats['last']['rating']
+        elif 'highest' in mode_stats:
+            rating = mode_stats['highest']['rating']
+        elif 'best' in mode_stats:
+            rating = mode_stats['best']['score']
+
+        await ctx.send(f':crown: **{name_input}** has a rating of **{rating}** in mode **{mode}**:chess_pawn:')
+
 # Returns the stats of any chess.com user
 # ex: $stats magnuscarlsen
 @bot.command()
