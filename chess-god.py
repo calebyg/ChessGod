@@ -64,20 +64,21 @@ def chess_response_ratings(name):
     # JSON object as dict
     response = get_player_stats(name).json
 
-    for mode in response["stats"]:
-        # mode_len = len()
-        # if mode_len < 1: # to avoid accessing null properties of a chess mode
-        #     result += mode + ": No data to display.\n"
-        if mode in chess_play_modes:
-            result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
-        elif mode == 'tactics':
-            result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
-        elif mode == 'fide':
-            result += mode + ": " + str(response["stats"][mode]) + "\n"
-        elif mode == 'puzzle_rush':
-            result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
-        else:
-            result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
-    return result
+    # for mode in response["stats"]:
+    #     # mode_len = len()
+    #     # if mode_len < 1: # to avoid accessing null properties of a chess mode
+    #     #     result += mode + ": No data to display.\n"
+    #     if mode in chess_play_modes:
+    #         result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
+    #     elif mode == 'tactics':
+    #         result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
+    #     elif mode == 'fide':
+    #         result += mode + ": " + str(response["stats"][mode]) + "\n"
+    #     elif mode == 'puzzle_rush':
+    #         result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
+    #     else:
+    #         result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
+    # return response
+    return response
 
 bot.run(token)
