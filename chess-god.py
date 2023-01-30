@@ -45,8 +45,9 @@ async def mode_rating(ctx, name_input: str, mode: str):
         get_player_profile(name_input) # determine if account exists
     except:
         await ctx.send(f':bangbang: Error! No information for {name_input} found!')
+        return # no need to check for invalid account details
 
-    player_stats = get_player_stats(name).json["stats"]
+    player_stats = get_player_stats(name_input).json["stats"]
     print(player_stats)
 
     if mode not in player_stats:
@@ -55,6 +56,10 @@ async def mode_rating(ctx, name_input: str, mode: str):
     mode_stats = player_stats[mode]
     print(mode_stats)
 
+
+    if mode == 'fide':
+        await ctx.send(f':crown: **{name_input}** has a rating of **{mode_stats}** in mode **{mode}**:chess_pawn:')
+        return
     # Empty stats
     if not mode_stats or len(mode_stats) == 0:
         await ctx.send(f':bangbang: Error! User **{name_input}** does not have a rating for mode **{mode}**')
@@ -98,21 +103,20 @@ def chess_response_ratings(name):
     # JSON object as dict
     response = get_player_stats(name).json
 
-    # for mode in response["stats"]:
-    #     # mode_len = len()
-    #     # if mode_len < 1: # to avoid accessing null properties of a chess mode
-    #     #     result += mode + ": No data to display.\n"
-    #     if mode in chess_play_modes:
-    #         result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
-    #     elif mode == 'tactics':
-    #         result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
-    #     elif mode == 'fide':
-    #         result += mode + ": " + str(response["stats"][mode]) + "\n"
-    #     elif mode == 'puzzle_rush':
-    #         result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
-    #     else:
-    #         result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
-    # return response
-    return response
+    for mode in response["stats"]:
+        if mode != 'fide' and len(response["stats"][mode]) < 1: # to avoid accessing null properties of a chess mode
+            result += mode + ": No data to display.\n"
+        else:
+            if mode in chess_play_modes:
+                result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
+            elif mode == 'tactics':
+                result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
+            elif mode == 'fide':
+                result += mode + ": " + str(response["stats"][mode]) + "\n"
+            elif mode == 'puzzle_rush':
+                result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
+            else:
+                result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
+    return result
 
 bot.run(token)
