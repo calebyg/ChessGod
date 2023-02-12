@@ -1,12 +1,19 @@
 # ChessGod
-A Discord chess bot that displays stats for any chess.com user
+A Discord bot that authenticates and displays player data
+
+## chess.com
+Read-only
+
+## lichess.org
+Read and write
 
 ### Documentation
 https://chesscom.readthedocs.io/en/latest/
+https://lichess.org/api#section/Introduction
 
 ## To Run
 
-### (Optional) Set up [virtual enviornment](https://virtualenv.pypa.io/en/latest/)
+### (Optional) Set up [virtual environment](https://virtualenv.pypa.io/en/latest/)
 
 1. Install virtualenv `pip install virtualenv`
 
