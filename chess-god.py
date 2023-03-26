@@ -1,12 +1,12 @@
 import os
-import json
-
+import berserk
+from pymongo import MongoClient
 from discord.ext import commands
 from dotenv import load_dotenv
 from chessdotcom import get_player_profile, get_player_stats
+from datetime import datetime
 
 load_dotenv() # import variables from .env
-token = os.environ.get("api-token")
 bot = commands.Bot(command_prefix='$')
 
 @bot.event
@@ -23,19 +23,32 @@ async def on_message(message):
 
     await bot.process_commands(message) # necessary to accept commands from users
 
-# Commands
+# displays all ratings for a chess.com account
+def chess_response_ratings(name):
+    chess_play_modes = ["chess_rapid", "chess_bullet", "chess_blitz"]
 
-# Returns the full name of a chess.com account
-# ex: $name fabianocaruana - Fabiano Caruana
-@bot.command(aliases=['username'])
-async def name(ctx, name_input):
-    try:
-        response = get_player_profile(name_input)
-        player_name = response.player.name
-    except:
-        await ctx.send(f'Error! Name for {name_input} not found in chess.com database.')
-    else:
-        await ctx.send(f'Full name: {player_name}')
+    result = "Ratings for player " + name + ":\n"
+
+    # JSON object as dict
+    response = get_player_stats(name).json
+
+    for mode in response["stats"]:
+        if mode != 'fide' and len(response["stats"][mode]) < 1: # to avoid accessing null properties of a chess mode
+            result += mode + ": No data to display.\n"
+        else:
+            if mode in chess_play_modes:
+                result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
+            elif mode == 'tactics':
+                result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
+            elif mode == 'fide':
+                result += mode + ": " + str(response["stats"][mode]) + "\n"
+            elif mode == 'puzzle_rush':
+                result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
+            else:
+                result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
+    return result
+
+# Commands
 
 # Returns user's stats for a given mode
 # ex: $mode_rating magnuscarlsen puzzle_rush
@@ -79,7 +92,7 @@ async def mode_rating(ctx, name_input: str, mode: str):
 # Returns the stats of any chess.com user
 # ex: $stats magnuscarlsen
 @bot.command()
-async def stats(ctx, name_input):
+async def stats(ctx, name_input: str):
     try:
         get_player_profile(name_input) # determine if account exists
     except:
@@ -87,36 +100,58 @@ async def stats(ctx, name_input):
     else:
        await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
 
-# Converts ChessDotComResponse to Python dict
-# Then displays chess mode and rating pairs as a single string
-# 'chess_rapid' -> 'last' -> 'rating'
-# 'chess_bullet' -> 'last' -> 'rating'
-# 'chess_blitz' -> 'last' -> 'rating'
-# 'tactics' -> 'highest' -> 'rating'
-# 'fide' -> rating
-# 'puzzle_rush' -> 'best' -> 'score'
-def chess_response_ratings(name):
-    chess_play_modes = ["chess_rapid", "chess_bullet", "chess_blitz"]
+# registers or updates a user's lichess api token
+@bot.command()
+async def register(ctx, user_token: str):
 
-    result = "Ratings for player " + name + ":\n"
+    id = ctx.author.id  # discord id
+    token = user_token  # lichess personal api token
+    collection = {}     # mongodb collection
 
-    # JSON object as dict
-    response = get_player_stats(name).json
+    # mongodb connection
+    try:
+        cluster = MongoClient(os.environ.get("MONGO_URL"))
+        db = cluster["ChessGodDB"]
+        collection = db["lichess_accounts"]
+    except:
+        print(f'MongoDB connection unsuccessful!\n')
+    else:
+        print(f'MongoDB connection successful!\n')
 
-    for mode in response["stats"]:
-        if mode != 'fide' and len(response["stats"][mode]) < 1: # to avoid accessing null properties of a chess mode
-            result += mode + ": No data to display.\n"
+    # account registration
+    try:
+        # lichess token auth
+        session = berserk.TokenSession(os.environ.get("LICHESS_API_TOKEN"))
+        client = berserk.Client(session=session)
+    except:
+        await ctx.send(f':bangbang: API access token is invalid!')
+    else:
+        user = client.account.get()['id'] # lichess username
+
+        # check if discord id exists in db
+        find_user = collection.find_one({'id': id})
+
+        #register new account
+        if find_user is None:
+            # db query
+            post = {"id": id, "token": token, "user": user, "dateCreated": datetime.now()}
+            collection.insert_one(post)
+
+            # confirm user added to database
+            await ctx.send(f'Account ' + user + ' added to database!\n')
+            await ctx.send(client.account.get())
         else:
-            if mode in chess_play_modes:
-                result += mode + ": " + str(response["stats"][mode]["last"]["rating"]) + "\n"
-            elif mode == 'tactics':
-                result += mode + ": " + str(response["stats"][mode]["highest"]["rating"]) + "\n"
-            elif mode == 'fide':
-                result += mode + ": " + str(response["stats"][mode]) + "\n"
-            elif mode == 'puzzle_rush':
-                result += mode + ": " + str(response["stats"][mode]["best"]["score"]) + "\n"
+            if token is find_user['token']:
+                await ctx.send(f'Account ' + user + " is already in our database!")
             else:
-                result += mode + ": Unknown details at this time. Our devs are working on the problem!\n"
-    return result
+                #await ctx.send(f'Register new account? All data for existing account will be lost')
+                await ctx.send(f'Registering new account to our database!')
+                # db query
+                post = {"id": id, "token": token, "user": user, "dateCreated": datetime.now()}
+                collection.insert_one(post)
 
-bot.run(token)
+                # confirm user added to database
+                await ctx.send(f'Account ' + user +' added to database!\n')
+                await ctx.send(client.account.get())
+
+bot.run(os.environ.get("DISCORD_API_TOKEN"))
