@@ -1,5 +1,6 @@
 import os
 import berserk
+import discord
 from pymongo import MongoClient
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -15,12 +16,16 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    message.content = message.content.lower() # makes all messages lowercase
     if message.author == bot.user:
         return
-    if "hi" in message.content:
-        await message.channel.send('Hello!') # response
-
+    # message came from private dm
+    if isinstance(message.channel, discord.DMChannel) and message.content.startswith("register"):
+        content_split = message.content.split()
+        if len(content_split) > 1:
+            token = content_split.pop(1)
+            await register(message, token)
+        else:
+            await message.channel.send(":bangbang: Invalid request!")
     await bot.process_commands(message) # necessary to accept commands from users
 
 # displays all ratings for a chess.com account
@@ -69,7 +74,6 @@ async def mode_rating(ctx, name_input: str, mode: str):
     mode_stats = player_stats[mode]
     print(mode_stats)
 
-
     if mode == 'fide':
         await ctx.send(f':crown: **{name_input}** has a rating of **{mode_stats}** in mode **{mode}**:chess_pawn:')
         return
@@ -90,7 +94,6 @@ async def mode_rating(ctx, name_input: str, mode: str):
         await ctx.send(f':crown: **{name_input}** has a rating of **{rating}** in mode **{mode}**:chess_pawn:')
 
 # Returns the stats of any chess.com user
-# ex: $stats magnuscarlsen
 @bot.command()
 async def stats(ctx, name_input: str):
     try:
@@ -101,12 +104,10 @@ async def stats(ctx, name_input: str):
        await ctx.send(chess_response_ratings(name_input)) # success - returns a string of all player ratings
 
 # registers or updates a user's lichess api token
-@bot.command()
-async def register(ctx, user_token: str):
-
-    id = ctx.author.id  # discord id
-    token = user_token  # lichess personal api token
-    collection = {}     # mongodb collection
+async def register(message: discord.Message, token: str):
+    discord_id = message.author.id
+    ctx = message.channel
+    collection = {}
 
     # mongodb connection
     try:
@@ -119,39 +120,39 @@ async def register(ctx, user_token: str):
         print(f'MongoDB connection successful!\n')
 
     # account registration
+    session = berserk.TokenSession(token)
+    client = berserk.Client(session=session)
     try:
-        # lichess token auth
-        session = berserk.TokenSession(os.environ.get("LICHESS_API_TOKEN"))
-        client = berserk.Client(session=session)
+        user = client.account.get()['id']  # lichess username
     except:
-        await ctx.send(f':bangbang: API access token is invalid!')
+        await ctx.send(f':bangbang: Lichess API access token is invalid!')
     else:
-        user = client.account.get()['id'] # lichess username
-
         # check if discord id exists in db
-        find_user = collection.find_one({'id': id})
+        find_user = collection.find_one({'discord_id': discord_id})
 
-        #register new account
-        if find_user is None:
+        # register new account
+        if find_user == None:
             # db query
-            post = {"id": id, "token": token, "user": user, "dateCreated": datetime.now()}
+            post = {"discord_id": discord_id, "lichess_token": token,
+                    "lichess_user": user, "date_created": datetime.now()}
             collection.insert_one(post)
 
             # confirm user added to database
-            await ctx.send(f'Account ' + user + ' added to database!\n')
+            await ctx.send(f'Played profile created for ' + user + '\n')
             await ctx.send(client.account.get())
         else:
-            if token is find_user['token']:
+            if token == find_user['lichess_token']:
                 await ctx.send(f'Account ' + user + " is already in our database!")
             else:
-                #await ctx.send(f'Register new account? All data for existing account will be lost')
                 await ctx.send(f'Registering new account to our database!')
                 # db query
-                post = {"id": id, "token": token, "user": user, "dateCreated": datetime.now()}
+                post = {"discord_id": discord_id, "lichess_token": token,
+                        "lichess_user": user, "date_created": datetime.now()}
                 collection.insert_one(post)
 
                 # confirm user added to database
-                await ctx.send(f'Account ' + user +' added to database!\n')
+                await ctx.send(f'Player profile created for ' + user + '\n')
                 await ctx.send(client.account.get())
+
 
 bot.run(os.environ.get("DISCORD_API_TOKEN"))

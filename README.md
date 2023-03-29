@@ -1,16 +1,16 @@
 # ChessGod
-A Discord bot that authenticates and displays player data
+A Discord bot that authenticates and displays player data for lichess.org accounts. Users' lichess profiles
+are stored in a MongoDB database for easy access in servers to compare stats among friends!
 
-## chess.com
-Read-only
+## Authentication
+Discord users must request a personal API access token from [lichess](https://lichess.org/account/oauth/token) and
+register the lichess account by sending a `register auth-code` private message to ChessGod. The token is unique to
+the account and should not be shared with anyone else.
 
-## lichess.org
-Read and write
-
-### Documentation
-https://chesscom.readthedocs.io/en/latest/
-
-https://lichess.org/api#section/Introduction
+## APIs
+- [Discord](https://discordpy.readthedocs.io/en/stable/api.html) 
+- [Berserk](https://berserk.readthedocs.io/en/master/)
+- [Pymongo](https://pymongo.readthedocs.io/en/stable/)
 
 ## To Run
 
