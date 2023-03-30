@@ -1,4 +1,5 @@
 # ChessGod
+<img src = "https://user-images.githubusercontent.com/32976268/228911270-3e53c9a3-79b5-4cab-9372-94616f8fc692.png" width = "256" height = "256">
 A Discord bot that authenticates and displays player data for lichess.org accounts. Users' lichess profiles
 are stored in a MongoDB database for easy access in servers to compare stats among friends!
 
